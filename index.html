@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asistencia QR</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0f1e;
+      --surface: #111827;
+      --card: #1a2235;
+      --border: #1f2d45;
+      --accent: #00d4ff;
+      --accent2: #00ff9d;
+      --danger: #ff4757;
+      --warning: #ffa502;
+      --text: #e8f0fe;
+      --muted: #6b7a99;
+      --success: #00ff9d;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* HEADER */
+    header {
+      width: 100%;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    header h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    header .subtitle {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .header-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .fecha-badge {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.2);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    /* MAIN */
+    main {
+      width: 100%;
+      max-width: 480px;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* STATS */
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .stat-num.present { color: var(--accent2); }
+    .stat-num.absent { color: var(--muted); }
+    .stat-num.total { color: var(--accent); }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    /* SCANNER */
+    .scanner-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .scanner-header {
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scanner-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+
+    .status-dot.active {
+      background: var(--accent2);
+      box-shadow: 0 0 8px var(--accent2);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    #scanner-area {
+      position: relative;
+      background: #000;
+      min-height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #reader {
+      width: 100%;
+    }
+
+    #reader video {
+      width: 100% !important;
+      border-radius: 0;
+    }
+
+    .scanner-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 40px;
+      color: var(--muted);
+    }
+
+    .scanner-placeholder .icon {
+      font-size: 48px;
+      opacity: 0.4;
+    }
+
+    .scanner-placeholder p {
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .scan-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 180px;
+      height: 180px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .scan-corner {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-color: var(--accent);
+      border-style: solid;
+    }
+
+    .scan-corner.tl { top: 0; left: 0; border-width: 3px 0 0 3px; }
+    .scan-corner.tr { top: 0; right: 0; border-width: 3px 3px 0 0; }
+    .scan-corner.bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; }
+    .scan-corner.br { bottom: 0; right: 0; border-width: 0 3px 3px 0; }
+
+    .scan-line {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      animation: scanline 2s linear infinite;
+      top: 0;
+    }
+
+    @keyframes scanline {
+      0% { top: 0; opacity: 1; }
+      90% { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+
+    .scanner-footer {
+      padding: 14px 16px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border-radius: 10px;
+      border: none;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #0099bb);
+      color: #000;
+    }
+
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .btn-danger {
+      background: rgba(255,71,87,0.15);
+      color: var(--danger);
+      border: 1px solid rgba(255,71,87,0.3);
+    }
+
+    .btn-confirm {
+      background: linear-gradient(135deg, var(--accent2), #00bb72);
+      color: #000;
+      font-size: 15px;
+      padding: 15px;
+    }
+
+    .btn-cancel {
+      background: rgba(107,122,153,0.15);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      margin-top: 8px;
+    }
+
+    /* RESULTADO */
+    .resultado-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .resultado-card.visible { display: block; }
+
+    .resultado-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .alumno-info {
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .alumno-avatar {
+      width: 60px; height: 60px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 800;
+      color: #000;
+      margin-bottom: 4px;
+    }
+
+    .alumno-nombre {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .alumno-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .badge.highlight {
+      color: var(--accent);
+      border-color: rgba(0,212,255,0.3);
+      background: rgba(0,212,255,0.08);
+    }
+
+    .hora-registro {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hora-registro span {
+      color: var(--accent2);
+      font-weight: 600;
+    }
+
+    /* ALERTA */
+    .alerta {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.3s ease;
+    }
+
+    .alerta.visible { display: flex; }
+
+    .alerta.success {
+      background: rgba(0,255,157,0.1);
+      border: 1px solid rgba(0,255,157,0.3);
+      color: var(--accent2);
+    }
+
+    .alerta.warning {
+      background: rgba(255,165,2,0.1);
+      border: 1px solid rgba(255,165,2,0.3);
+      color: var(--warning);
+    }
+
+    .alerta.error {
+      background: rgba(255,71,87,0.1);
+      border: 1px solid rgba(255,71,87,0.3);
+      color: var(--danger);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* LISTA */
+    .lista-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .lista-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .lista-title { font-size: 14px; font-weight: 600; }
+
+    .lista-body {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .lista-item {
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .lista-item:last-child { border-bottom: none; }
+
+    .lista-num {
+      width: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .lista-nombre { flex: 1; }
+
+    .lista-hora {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--accent2);
+    }
+
+    .lista-empty {
+      padding: 30px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* FOOTER */
+    footer {
+      margin-top: auto;
+      padding: 20px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">📋</div>
+  <div>
+    <h1>Asistencia QR</h1>
+    <div class="subtitle">3° A · Turno Mañana</div>
+  </div>
+  <div class="header-right">
+    <div class="fecha-badge" id="fecha-badge"></div>
+  </div>
+</header>
+
+<main>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num present" id="count-presente">0</div>
+      <div class="stat-label">Presentes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num absent" id="count-ausente">30</div>
+      <div class="stat-label">Ausentes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num total">30</div>
+      <div class="stat-label">Total</div>
+    </div>
+  </div>
+
+  <!-- ALERTA -->
+  <div class="alerta" id="alerta">
+    <span id="alerta-icon">✅</span>
+    <span id="alerta-msg"></span>
+  </div>
+
+  <!-- RESULTADO -->
+  <div class="resultado-card" id="resultado-card">
+    <div class="resultado-header">📌 Alumno encontrado</div>
+    <div class="alumno-info">
+      <div class="alumno-avatar" id="alumno-avatar">?</div>
+      <div class="alumno-nombre" id="alumno-nombre">—</div>
+      <div class="alumno-meta">
+        <div class="badge highlight" id="alumno-id">—</div>
+        <div class="badge" id="alumno-grado">—</div>
+        <div class="badge" id="alumno-seccion">—</div>
+        <div class="badge" id="alumno-turno">—</div>
+      </div>
+      <div class="hora-registro">🕐 Hora: <span id="alumno-hora">—</span></div>
+      <button class="btn btn-confirm" id="btn-confirmar">✅ Confirmar asistencia</button>
+      <button class="btn btn-cancel" id="btn-cancelar">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- SCANNER -->
+  <div class="scanner-card">
+    <div class="scanner-header">
+      <span class="scanner-title">Escáner QR</span>
+      <div class="status-dot" id="status-dot"></div>
+    </div>
+    <div id="scanner-area">
+      <div class="scanner-placeholder" id="placeholder">
+        <div class="icon">📷</div>
+        <p>Toca el botón para activar la cámara y escanear el QR del alumno</p>
+      </div>
+      <div id="reader" style="display:none;"></div>
+      <div class="scan-overlay" id="scan-overlay" style="display:none;">
+        <div class="scan-corner tl"></div>
+        <div class="scan-corner tr"></div>
+        <div class="scan-corner bl"></div>
+        <div class="scan-corner br"></div>
+        <div class="scan-line"></div>
+      </div>
+    </div>
+    <div class="scanner-footer">
+      <button class="btn btn-primary" id="btn-scanner">📷 Iniciar escáner</button>
+    </div>
+  </div>
+
+  <!-- LISTA REGISTRADOS -->
+  <div class="lista-card">
+    <div class="lista-header">
+      <span class="lista-title">Registros de hoy</span>
+      <span class="fecha-badge" id="lista-count">0 registros</span>
+    </div>
+    <div class="lista-body" id="lista-body">
+      <div class="lista-empty">Sin registros aún</div>
+    </div>
+  </div>
+
+</main>
+
+<footer>josebarturen557 · asistencia-qr · v1.0</footer>
+
+<script>
+  // ─── CONFIGURACIÓN ───────────────────────────────────────────────
+  const SHEET_ID = '1v4wXhcP79kgaU-a16F1y4aqQDeAkj2kyRbgFaBwDF20';
+  const SCRIPT_URL = ''; // Lo agregaremos después con Apps Script
+
+  // ─── ESTADO ──────────────────────────────────────────────────────
+  let scanner = null;
+  let scannerActivo = false;
+  let alumnoActual = null;
+  let registros = [];
+  let alumnosDB = {};
+
+  // ─── FECHA ───────────────────────────────────────────────────────
+  function fechaHoy() {
+    return new Date().toLocaleDateString('es-PE', {
+      weekday: 'short', day: '2-digit', month: 'short'
+    });
+  }
+
+  function horaActual() {
+    return new Date().toLocaleTimeString('es-PE', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  }
+
+  document.getElementById('fecha-badge').textContent = fechaHoy();
+
+  // ─── BASE DE DATOS LOCAL (desde Google Sheets vía fetch) ──────────
+  // Por ahora usamos datos de ejemplo. Después se cargan desde Sheets.
+  const alumnosEjemplo = [
+    { id: '3A001', apellidos: 'García Salinas', nombres: 'Lucía', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A002', apellidos: 'Rodríguez Figueroa', nombres: 'Valentina', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A003', apellidos: 'López Campos', nombres: 'Camila', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A004', apellidos: 'Martínez Gutiérrez', nombres: 'Sofía', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A005', apellidos: 'Sánchez Ortega', nombres: 'Isabella', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A006', apellidos: 'Pérez Aguilar', nombres: 'Martina', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A007', apellidos: 'González Medina', nombres: 'Valeria', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A008', apellidos: 'Ramírez Vega', nombres: 'Daniela', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A009', apellidos: 'Torres Rojas', nombres: 'Gabriela', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A010', apellidos: 'Flores Delgado', nombres: 'Alejandra', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A011', apellidos: 'Rivera Castro', nombres: 'Andrea', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A012', apellidos: 'Chávez Pinto', nombres: 'Fernanda', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A013', apellidos: 'Reyes Alvarado', nombres: 'Paola', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A014', apellidos: 'Cruz Ibáñez', nombres: 'Natalia', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A015', apellidos: 'Morales Vera', nombres: 'Karla', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A016', apellidos: 'Herrera Muñoz', nombres: 'Diana', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A017', apellidos: 'Mendoza Soto', nombres: 'Jimena', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A018', apellidos: 'Castillo Peña', nombres: 'Melissa', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A019', apellidos: 'Vargas Cabrera', nombres: 'Claudia', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A020', apellidos: 'Romero Silva', nombres: 'Vanessa', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A021', apellidos: 'Quispe Hancco', nombres: 'Sebastián', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A022', apellidos: 'Mamani Apaza', nombres: 'Mateo', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A023', apellidos: 'Huanca Ttito', nombres: 'Nicolás', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A024', apellidos: 'Condori Cusi', nombres: 'Diego', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A025', apellidos: 'Ccopa Yupanqui', nombres: 'Rodrigo', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A026', apellidos: 'Lazo Paucar', nombres: 'Andrés', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A027', apellidos: 'Ramos Huayra', nombres: 'Felipe', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A028', apellidos: 'Núñez Meza', nombres: 'Carlos', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A029', apellidos: 'Paredes Arias', nombres: 'Luis', grado: '3°', seccion: 'A', turno: 'Mañana' },
+    { id: '3A030', apellidos: 'Espinoza Benítez', nombres: 'Jorge', grado: '3°', seccion: 'A', turno: 'Mañana' },
+  ];
+
+  alumnosEjemplo.forEach(a => { alumnosDB[a.id] = a; });
+
+  // ─── SCANNER ─────────────────────────────────────────────────────
+  const btnScanner = document.getElementById('btn-scanner');
+  const statusDot = document.getElementById('status-dot');
+  const placeholder = document.getElementById('placeholder');
+  const readerEl = document.getElementById('reader');
+  const scanOverlay = document.getElementById('scan-overlay');
+
+  btnScanner.addEventListener('click', () => {
+    if (!scannerActivo) iniciarScanner();
+    else detenerScanner();
+  });
+
+  function iniciarScanner() {
+    placeholder.style.display = 'none';
+    readerEl.style.display = 'block';
+    scanOverlay.style.display = 'block';
+    statusDot.classList.add('active');
+    btnScanner.textContent = '⏹ Detener escáner';
+    btnScanner.className = 'btn btn-danger';
+
+    scanner = new Html5Qrcode('reader');
+    scanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 200, height: 200 } },
+      onScanSuccess,
+      () => {}
+    ).catch(err => {
+      mostrarAlerta('error', '❌ No se pudo acceder a la cámara. Verifica los permisos.');
+      detenerScanner();
+    });
+
+    scannerActivo = true;
+  }
+
+  function detenerScanner() {
+    if (scanner) {
+      scanner.stop().then(() => {
+        scanner.clear();
+        scanner = null;
+      }).catch(() => {});
+    }
+    scannerActivo = false;
+    placeholder.style.display = 'flex';
+    readerEl.style.display = 'none';
+    scanOverlay.style.display = 'none';
+    statusDot.classList.remove('active');
+    btnScanner.textContent = '📷 Iniciar escáner';
+    btnScanner.className = 'btn btn-primary';
+  }
+
+  function onScanSuccess(decodedText) {
+    const id = decodedText.trim().toUpperCase();
+    const alumno = alumnosDB[id];
+
+    detenerScanner();
+
+    if (!alumno) {
+      mostrarAlerta('error', `❌ QR no reconocido: ${id}`);
+      return;
+    }
+
+    // Verificar si ya fue registrado hoy
+    const yaRegistrado = registros.find(r => r.id === id);
+    if (yaRegistrado) {
+      mostrarAlerta('warning', `⚠️ ${alumno.nombres} ${alumno.apellidos} ya fue registrado a las ${yaRegistrado.hora}`);
+      return;
+    }
+
+    alumnoActual = alumno;
+    mostrarAlumno(alumno);
+  }
+
+  // ─── MOSTRAR ALUMNO ───────────────────────────────────────────────
+  function mostrarAlumno(a) {
+    const iniciales = (a.nombres[0] + a.apellidos[0]).toUpperCase();
+    document.getElementById('alumno-avatar').textContent = iniciales;
+    document.getElementById('alumno-nombre').textContent = `${a.apellidos}, ${a.nombres}`;
+    document.getElementById('alumno-id').textContent = a.id;
+    document.getElementById('alumno-grado').textContent = `${a.grado} Grado`;
+    document.getElementById('alumno-seccion').textContent = `Sección ${a.seccion}`;
+    document.getElementById('alumno-turno').textContent = a.turno;
+    document.getElementById('alumno-hora').textContent = horaActual();
+    document.getElementById('resultado-card').classList.add('visible');
+    ocultarAlerta();
+  }
+
+  // ─── CONFIRMAR ────────────────────────────────────────────────────
+  document.getElementById('btn-confirmar').addEventListener('click', () => {
+    if (!alumnoActual) return;
+
+    const hora = horaActual();
+    const fecha = new Date().toLocaleDateString('es-PE');
+
+    const registro = {
+      id: alumnoActual.id,
+      nombre: `${alumnoActual.apellidos}, ${alumnoActual.nombres}`,
+      hora,
+      fecha
+    };
+
+    registros.push(registro);
+    actualizarStats();
+    actualizarLista();
+    enviarASheets(registro);
+    reproducirBeep();
+
+    mostrarAlerta('success', `✅ ${alumnoActual.nombres} registrado a las ${hora}`);
+    document.getElementById('resultado-card').classList.remove('visible');
+    alumnoActual = null;
+  });
+
+  // ─── CANCELAR ─────────────────────────────────────────────────────
+  document.getElementById('btn-cancelar').addEventListener('click', () => {
+    document.getElementById('resultado-card').classList.remove('visible');
+    alumnoActual = null;
+    ocultarAlerta();
+  });
+
+  // ─── STATS ────────────────────────────────────────────────────────
+  function actualizarStats() {
+    const presentes = registros.length;
+    const ausentes = 30 - presentes;
+    document.getElementById('count-presente').textContent = presentes;
+    document.getElementById('count-ausente').textContent = ausentes;
+  }
+
+  // ─── LISTA ────────────────────────────────────────────────────────
+  function actualizarLista() {
+    const body = document.getElementById('lista-body');
+    document.getElementById('lista-count').textContent = `${registros.length} registros`;
+
+    if (registros.length === 0) {
+      body.innerHTML = '<div class="lista-empty">Sin registros aún</div>';
+      return;
+    }
+
+    body.innerHTML = registros.map((r, i) => `
+      <div class="lista-item">
+        <div class="lista-num">${i + 1}</div>
+        <div class="lista-nombre">${r.nombre}</div>
+        <div class="lista-hora">${r.hora}</div>
+      </div>
+    `).join('');
+
+    body.scrollTop = body.scrollHeight;
+  }
+
+  // ─── BEEP ─────────────────────────────────────────────────────────
+  function reproducirBeep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } catch(e) {}
+  }
+
+  // ─── ALERTAS ──────────────────────────────────────────────────────
+  function mostrarAlerta(tipo, msg) {
+    const el = document.getElementById('alerta');
+    el.className = `alerta visible ${tipo}`;
+    document.getElementById('alerta-msg').textContent = msg;
+    setTimeout(() => el.classList.remove('visible'), 4000);
+  }
+
+  function ocultarAlerta() {
+    document.getElementById('alerta').classList.remove('visible');
+  }
+
+  // ─── ENVIAR A SHEETS ──────────────────────────────────────────────
+  function enviarASheets(registro) {
+    if (!SCRIPT_URL) return; // Aún no configurado
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(registro)
+    }).catch(() => {});
+  }
+</script>
+</body>
+</html>
