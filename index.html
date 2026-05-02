@@ -562,7 +562,29 @@
 <script>
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzhDuWKhevRlJUkElLr4LtcmACNETxh-NV3bhESy_t-7DKNn2bxcZmI77e42nTmAD_Kaw/exec';
 
-  let scanner = null, scannerActivo = false, alumnoActual = null, registros = [];
+  let scanner = null, scannerActivo = false, alumnoActual = null;
+
+  // ─── localStorage: mantiene datos aunque se bloquee el celular ───
+  const HOY = new Date().toLocaleDateString('es-PE');
+
+  function cargarRegistros() {
+    const saved = localStorage.getItem('asistencia_registros');
+    const fecha = localStorage.getItem('asistencia_fecha');
+    if (saved && fecha === HOY) {
+      return JSON.parse(saved);
+    } else {
+      localStorage.removeItem('asistencia_registros');
+      localStorage.setItem('asistencia_fecha', HOY);
+      return [];
+    }
+  }
+
+  function guardarRegistros() {
+    localStorage.setItem('asistencia_registros', JSON.stringify(registros));
+    localStorage.setItem('asistencia_fecha', HOY);
+  }
+
+  let registros = cargarRegistros();
 
   const alumnosDB = {};
   const alumnos = [
@@ -594,6 +616,10 @@
   }
 
   document.getElementById('fecha-badge').textContent = fechaHoy();
+
+  // Cargar registros guardados al iniciar
+  actualizarStats();
+  actualizarLista();
 
   const btnScanner = document.getElementById('btn-scanner');
   const statusDot = document.getElementById('status-dot');
@@ -656,6 +682,7 @@
     const fecha = new Date().toLocaleDateString('es-PE');
     const reg = { id: alumnoActual.id, nombre: alumnoActual.apellidos + ', ' + alumnoActual.nombres, hora, fecha };
     registros.push(reg);
+    guardarRegistros();
     actualizarStats();
     actualizarLista();
     enviarASheets(reg);
