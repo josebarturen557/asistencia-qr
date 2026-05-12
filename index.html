@@ -1145,7 +1145,7 @@ function onScanSuccess(text) {
   detenerScanner();
 
   const id = text.trim().toUpperCase();
-  console.log('QR leido:', JSON.stringify(text), '-> ID:', id, '-> Alumno:', alumnosDB[id] ? alumnosDB[id].nom : 'NO ENCONTRADO');
+  showToast('Leido: ' + id);
   const alumno = alumnosDB[id];
 
   if (!alumno) {
