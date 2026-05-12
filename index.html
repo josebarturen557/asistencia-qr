@@ -211,7 +211,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyjNG9ax4ApuekN4_32djRW5JmX7GDlikvQY1IMXElyMNRxElFkon8Af-B4AEej_nN42w/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyroIHO3zlu03pmPKbiVcdapz8Ca4igh1c2Ba_w8p3V4bYeuguyf5Vzs1arySo0JoQ0WA/exec';
 // TOTAL se calcula dinámicamente según el turno activo
 function calcularTotal(t) {
   return alumnosData.filter(a => a.turno === (t === 'manana' ? 'Manana' : t === 'tarde' ? 'Tarde' : null)).length;
@@ -1145,7 +1145,6 @@ function onScanSuccess(text) {
   detenerScanner();
 
   const id = text.trim().toUpperCase();
-  showToast('Leido: ' + id);
   const alumno = alumnosDB[id];
 
   if (!alumno) {
