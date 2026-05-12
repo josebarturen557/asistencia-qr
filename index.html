@@ -1151,19 +1151,15 @@ function onScanSuccess(text) {
 }
 
 function mostrarAlumno(a) {
-  const fuera = esFueraDeHorario() && turno !== 'refuerzo';
-  const tard  = !fuera && esTardanza() && turno !== 'refuerzo';
   const isRef = turno === 'refuerzo';
-
-  let col, bgAv, coAv, titulo;
-  if (isRef)   { col='#af52de'; bgAv='#f5eeff'; coAv='#7b2fa8'; titulo='Registro de reforzamiento'; }
-  else if (fuera) { col='#ff3b30'; bgAv='#ffeef0'; coAv='#c62828'; titulo='Fuera de horario — se registrará como Ausente'; }
-  else if (tard)  { col='#ff9f0a'; bgAv='#fff3e0'; coAv='#b35900'; titulo='Alumno en tardanza'; }
-  else            { col='#007aff'; bgAv='#e8f0fe'; coAv='#1a3a6c'; titulo='Alumno encontrado'; }
+  const col   = COLS[turno];
+  const bgAv  = '#e8f0fe';
+  const coAv  = '#1a3a6c';
+  const titulo = isRef ? 'Registro de reforzamiento' : 'Alumno encontrado';
 
   const panel = document.getElementById('cpanel');
   panel.className = 'cpanel show';
-  panel.style.border = `2px solid ${col}`;
+  panel.style.border = '2px solid ' + col;
 
   document.getElementById('cpanel-hdr').style.color = col;
   document.getElementById('cpanel-hdr').textContent = titulo;
@@ -1179,21 +1175,13 @@ function mostrarAlumno(a) {
 
   const bok = document.getElementById('bok');
   bok.style.background = col;
-  bok.textContent = isRef ? 'Registrar en reforzamiento'
-    : fuera ? 'Registrar como Ausente'
-    : tard  ? 'Confirmar tardanza'
-    : 'Confirmar asistencia';
+  bok.textContent = isRef ? 'Registrar en reforzamiento' : 'Confirmar asistencia';
   ocultarAlerta();
 }
 
 function confirmar() {
   if (!alumnoActual) return;
-  const fuera = esFueraDeHorario() && turno !== 'refuerzo';
-  const tard  = !fuera && esTardanza() && turno !== 'refuerzo';
-  const estado = turno === 'refuerzo' ? 'Refuerzo'
-    : fuera ? 'Ausente'
-    : tard  ? 'Tardanza'
-    : 'Presente';
+  const estado = turno === 'refuerzo' ? 'Refuerzo' : 'Presente';
 
   const reg = {
     ...alumnoActual,
