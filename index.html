@@ -6,7 +6,7 @@
   <title>Asistencia QR — I.E. Diego Ferre Sosa</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'Outfit',sans-serif;background:#0d2460;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0;position:relative;overflow-x:hidden;}
@@ -199,7 +199,13 @@
 
   </div>
 
-  <footer>I.E. Diego Ferre Sosa · Monsefu · Sistema QR v2.0</footer>
+  <footer>
+  I.E. Diego Ferre Sosa · Monsefu · Sistema QR v2.0
+  <br><br>
+  <button onclick="limpiarDia()" style="background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.2);border-radius:8px;padding:6px 14px;color:rgba(255,255,255,0.4);font-size:10px;cursor:pointer;font-family:Outfit,sans-serif;">
+    🗑 Limpiar registros del día
+  </button>
+</footer>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1059,18 +1065,14 @@ function setTurno(t) {
 function render() {
   const r = regs[turno];
   const isRef = turno === 'refuerzo';
-  const pres  = isRef ? r.length : r.filter(x => x.estado === 'Presente').length;
-  const tard  = isRef ? 0 : r.filter(x => x.estado === 'Tardanza').length;
-  const ausen = isRef ? 0 : r.filter(x => x.estado === 'Ausente').length;
   const totalTurno = isRef ? alumnosData.length : alumnosData.filter(a => a.turno === (turno === 'manana' ? 'Manana' : 'Tarde')).length;
-  const aus   = isRef ? '-' : totalTurno - pres - tard - ausen;
+  const registrados = r.length;
+  const sinEscanear = isRef ? 0 : totalTurno - registrados;
 
-  document.getElementById('n-p').textContent = pres;
-  document.getElementById('n-t').textContent = tard;
-  document.getElementById('n-a').textContent = isRef ? '-' : ausen + (aus > 0 ? ' + ' + aus : '');
-  document.getElementById('s-p').textContent = isRef ? 'reforzamiento' : 'de '+TOTAL;
-  document.getElementById('s-t').textContent = isRef ? '' : 'despues limite';
-  document.getElementById('s-a').textContent = isRef ? '' : 'registrados + sin escanear';
+  document.getElementById('n-p').textContent = registrados;
+  document.getElementById('n-a').textContent = isRef ? '-' : sinEscanear;
+  document.getElementById('s-p').textContent = isRef ? 'en reforzamiento' : 'de ' + totalTurno;
+  document.getElementById('s-a').textContent = isRef ? '' : 'pendientes';
   document.getElementById('lcnt').textContent = r.length + ' registros';
 
   const body = document.getElementById('lbody');
@@ -1100,6 +1102,10 @@ function toggleScanner() {
 }
 
 function iniciarScanner() {
+  if (typeof Html5Qrcode === 'undefined') {
+    mostrarAlerta('error', 'Libreria QR no cargada. Recarga la pagina.');
+    return;
+  }
   document.getElementById('placeholder').style.display = 'none';
   document.getElementById('reader').style.display = 'block';
   document.getElementById('sbadge').textContent = 'Activo';
@@ -1136,9 +1142,10 @@ function detenerScanner() {
 function onScanSuccess(text) {
   if (scannerBloqueado) return;
   scannerBloqueado = true;
+  detenerScanner();
+
   const id = text.trim().toUpperCase();
   const alumno = alumnosDB[id];
-  detenerScanner();
 
   if (!alumno) {
     mostrarAlerta('error', 'QR no reconocido: ' + id);
@@ -1146,12 +1153,10 @@ function onScanSuccess(text) {
     return;
   }
 
-  // Verificar que el alumno pertenece al turno seleccionado
   if (turno !== 'refuerzo') {
-    const turnoAlumno = alumno.turno; // 'Manana' o 'Tarde'
     const turnoActual = turno === 'manana' ? 'Manana' : 'Tarde';
-    if (turnoAlumno !== turnoActual) {
-      const turnoNombre = turnoAlumno === 'Manana' ? 'Mañana' : 'Tarde';
+    if (alumno.turno !== turnoActual) {
+      const turnoNombre = alumno.turno === 'Manana' ? 'Mañana' : 'Tarde';
       mostrarAlerta('error', alumno.nom + ' pertenece al turno ' + turnoNombre);
       reactivarScanner();
       return;
@@ -1165,8 +1170,10 @@ function onScanSuccess(text) {
     return;
   }
 
+  // Alumno válido — mostrar panel sin reactivar scanner aún
   alumnoActual = alumno;
   mostrarAlumno(alumno);
+  // El scanner se reactiva solo cuando el usuario presiona Confirmar o Cancelar
 }
 
 function mostrarAlumno(a) {
@@ -1237,7 +1244,7 @@ function reactivarScanner() {
   setTimeout(() => {
     scannerBloqueado = false;
     iniciarScanner();
-  }, 1500);
+  }, 800);
 }
 
 // ── LOCAL STORAGE ──
@@ -1307,6 +1314,18 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
+// ── LIMPIAR DÍA ──
+function limpiarDia() {
+  if (!confirm('¿Limpiar todos los registros de hoy? Esto no borra lo que ya se envió a Sheets.')) return;
+  localStorage.removeItem('qr_regs_manana');
+  localStorage.removeItem('qr_regs_tarde');
+  localStorage.removeItem('qr_regs_refuerzo');
+  localStorage.removeItem('qr_fecha');
+  regs = {manana:[], tarde:[], refuerzo:[]};
+  render();
+  mostrarAlerta('success', 'Registros locales limpiados');
+}
+
 // ── RELOJ EN VIVO ──
 function actualizarReloj() {
   const now = new Date();
@@ -1314,17 +1333,20 @@ function actualizarReloj() {
   const m = String(now.getMinutes()).padStart(2,'0');
   const s = String(now.getSeconds()).padStart(2,'0');
   const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-  document.getElementById('reloj-hora').textContent = h + ':' + m;
-  document.getElementById('reloj-seg').textContent = dias[now.getDay()] + ' · ' + s + 's';
+  const elHora = document.getElementById('reloj-hora');
+  const elSeg = document.getElementById('reloj-seg');
+  if (elHora) elHora.textContent = h + ':' + m;
+  if (elSeg) elSeg.textContent = dias[now.getDay()] + ' · ' + s + 's';
 }
-actualizarReloj();
-setInterval(actualizarReloj, 1000);
-
 // ── INIT ──
-cargarLocal();
-const turnoAuto = detectarTurno();
-setTurno(turnoAuto);
-render();
+document.addEventListener('DOMContentLoaded', function() {
+  actualizarReloj();
+  setInterval(actualizarReloj, 1000);
+  cargarLocal();
+  const turnoAuto = detectarTurno();
+  setTurno(turnoAuto);
+  render();
+});
 </script>
 </body>
 </html>
