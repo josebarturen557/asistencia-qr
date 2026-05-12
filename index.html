@@ -219,6 +219,7 @@ let scannerActivo = false;
 let alumnoActual = null;
 let alumnosDB = {};
 let regs = {manana:[], tarde:[], refuerzo:[]};
+let scannerBloqueado = false;
 
 // ── DATOS REALES — I.E. Diego Ferre Sosa 2026 ──
 const alumnosData = [
@@ -1133,13 +1134,15 @@ function detenerScanner() {
 }
 
 function onScanSuccess(text) {
+  if (scannerBloqueado) return;
+  scannerBloqueado = true;
   const id = text.trim().toUpperCase();
   const alumno = alumnosDB[id];
   detenerScanner();
 
   if (!alumno) {
     mostrarAlerta('error', 'QR no reconocido: ' + id);
-    iniciarScanner();
+    reactivarScanner();
     return;
   }
 
@@ -1150,7 +1153,7 @@ function onScanSuccess(text) {
     if (turnoAlumno !== turnoActual) {
       const turnoNombre = turnoAlumno === 'Manana' ? 'Mañana' : 'Tarde';
       mostrarAlerta('error', alumno.nom + ' pertenece al turno ' + turnoNombre);
-      iniciarScanner();
+      reactivarScanner();
       return;
     }
   }
@@ -1158,7 +1161,7 @@ function onScanSuccess(text) {
   const yaReg = regs[turno].find(r => r.id === id);
   if (yaReg) {
     mostrarAlerta('warning', alumno.nom + ' ya fue registrado a las ' + yaReg.hora);
-    iniciarScanner();
+    reactivarScanner();
     return;
   }
 
@@ -1220,14 +1223,21 @@ function confirmar() {
   document.getElementById('cpanel').style.border = '';
   alumnoActual = null;
   render();
-  iniciarScanner();
+  reactivarScanner();
 }
 
 function cancelar() {
   document.getElementById('cpanel').className = 'cpanel';
   document.getElementById('cpanel').style.border = '';
   alumnoActual = null;
-  iniciarScanner();
+  reactivarScanner();
+}
+
+function reactivarScanner() {
+  setTimeout(() => {
+    scannerBloqueado = false;
+    iniciarScanner();
+  }, 1500);
 }
 
 // ── LOCAL STORAGE ──
