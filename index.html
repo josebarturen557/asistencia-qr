@@ -1140,6 +1140,17 @@ function onScanSuccess(text) {
     return;
   }
 
+  // Verificar que el alumno pertenece al turno seleccionado
+  if (turno !== 'refuerzo') {
+    const turnoAlumno = alumno.turno; // 'Manana' o 'Tarde'
+    const turnoActual = turno === 'manana' ? 'Manana' : 'Tarde';
+    if (turnoAlumno !== turnoActual) {
+      const turnoNombre = turnoAlumno === 'Manana' ? 'Mañana' : 'Tarde';
+      mostrarAlerta('error', alumno.nom + ' pertenece al turno ' + turnoNombre);
+      return;
+    }
+  }
+
   const yaReg = regs[turno].find(r => r.id === id);
   if (yaReg) {
     mostrarAlerta('warning', alumno.nom + ' ya fue registrado a las ' + yaReg.hora);
