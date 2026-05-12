@@ -9,8 +9,10 @@
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Outfit',sans-serif;background:#f2f2f7;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0;}
-    .app{width:100%;max-width:480px;display:flex;flex-direction:column;min-height:100vh;}
+    body{font-family:'Outfit',sans-serif;background:#0d2460;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0;position:relative;overflow-x:hidden;}
+    body::before{content:'';position:fixed;top:-40%;left:-20%;width:140%;height:140%;background:radial-gradient(ellipse at 30% 20%,#1e4db7 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,#0a1a45 0%,transparent 50%);pointer-events:none;z-index:0;}
+    body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 70% 10%,rgba(201,168,76,0.08) 0%,transparent 50%);pointer-events:none;z-index:0;}
+    .app{width:100%;max-width:480px;display:flex;flex-direction:column;min-height:100vh;position:relative;z-index:1;}
 
     /* HEADER */
     .header{background:white;padding:14px 16px 12px;border-bottom:0.5px solid #e5e5ea;position:sticky;top:0;z-index:100;}
@@ -28,12 +30,12 @@
 
     /* STATS */
     .stats3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
-    .sc{background:white;border-radius:14px;padding:12px 8px;text-align:center;}
+    .sc{background:rgba(255,255,255,0.08);backdrop-filter:blur(10px);border:0.5px solid rgba(255,255,255,0.15);border-radius:14px;padding:12px 8px;text-align:center;}
     .sc-top{display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:4px;}
     .sc-dot{width:7px;height:7px;border-radius:50%;}
-    .sc-lbl{font-size:10px;color:#8e8e93;font-weight:500;}
-    .sc-num{font-size:26px;font-weight:600;color:#000;line-height:1.1;}
-    .sc-sub{font-size:9px;color:#c7c7cc;margin-top:3px;}
+    .sc-lbl{font-size:10px;color:rgba(255,255,255,0.5);font-weight:500;}
+    .sc-num{font-size:26px;font-weight:600;color:#ffffff;line-height:1.1;}
+    .sc-sub{font-size:9px;color:rgba(255,255,255,0.3);margin-top:3px;}
 
     /* TURNO INFO */
     .tinfo{background:white;border-radius:12px;padding:9px 14px;display:flex;align-items:center;justify-content:space-between;}
@@ -41,12 +43,12 @@
     .tbadge{font-size:10px;padding:3px 10px;border-radius:10px;font-weight:600;}
 
     /* ALERTA */
-    .alerta{padding:10px 14px;border-radius:12px;font-size:12px;font-weight:600;display:none;align-items:center;gap:8px;animation:slideIn 0.3s ease;}
+    .alerta{padding:10px 14px;border-radius:12px;font-size:12px;font-weight:600;display:none;align-items:center;gap:8px;animation:slideIn 0.3s ease;backdrop-filter:blur(10px);}
     .alerta.visible{display:flex;}
-    .alerta.success{background:#e8f9ee;color:#1c7b3a;}
-    .alerta.warning{background:#fff3e0;color:#b35900;}
-    .alerta.error{background:#ffebee;color:#c62828;}
-    .alerta.ausente{background:#ffeef0;color:#c62828;}
+    .alerta.success{background:rgba(52,199,89,0.2);border:0.5px solid rgba(52,199,89,0.4);color:#34c759;}
+    .alerta.warning{background:rgba(201,168,76,0.2);border:0.5px solid rgba(201,168,76,0.4);color:#c9a84c;}
+    .alerta.error{background:rgba(204,31,31,0.2);border:0.5px solid rgba(204,31,31,0.4);color:#ff6b6b;}
+    .alerta.ausente{background:rgba(204,31,31,0.2);border:0.5px solid rgba(204,31,31,0.4);color:#ff6b6b;}
     @keyframes slideIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
 
     /* CONFIRM PANEL */
@@ -63,12 +65,12 @@
     .bcx{padding:12px 16px;border:0.5px solid #e5e5ea;border-radius:12px;font-size:13px;color:#8e8e93;background:#f2f2f7;cursor:pointer;font-family:'Outfit',sans-serif;}
 
     /* SCANNER */
-    .scard{background:white;border-radius:14px;overflow:hidden;}
-    .shdr{padding:11px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid #e5e5ea;}
-    .stitle{font-size:13px;font-weight:600;color:#000;}
-    .sbadge{font-size:10px;padding:2px 8px;border-radius:10px;background:#f2f2f7;color:#8e8e93;}
-    .sbadge.active{background:#e8f9ee;color:#1c7b3a;}
-    #reader-area{background:#1c1c1e;min-height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;position:relative;}
+    .scard{background:rgba(255,255,255,0.08);backdrop-filter:blur(10px);border:0.5px solid rgba(255,255,255,0.15);border-radius:14px;overflow:hidden;}
+    .shdr{padding:11px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid rgba(255,255,255,0.1);}
+    .stitle{font-size:13px;font-weight:600;color:#ffffff;}
+    .sbadge{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.4);}
+    .sbadge.active{background:rgba(52,199,89,0.2);color:#34c759;}
+    #reader-area{background:rgba(0,0,0,0.4);min-height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;position:relative;}
     #reader{width:100%;}
     #reader video{width:100%!important;}
     .placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;}
@@ -79,29 +81,29 @@
     .cc.bl{bottom:0;left:0;border-width:0 0 2px 2px;}
     .cc.br{bottom:0;right:0;border-width:0 2px 2px 0;}
     .ctxt{color:#555;font-size:10px;}
-    .sbtn{width:100%;padding:14px;border:none;font-size:13px;font-weight:600;cursor:pointer;color:white;font-family:'Outfit',sans-serif;}
+    .sbtn{width:100%;padding:14px;border:none;font-size:13px;font-weight:700;cursor:pointer;color:#0d2460;background:#c9a84c;font-family:'Outfit',sans-serif;letter-spacing:0.3px;}
 
     /* LISTA */
-    .lcard{background:white;border-radius:14px;overflow:hidden;}
-    .lhdr{padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid #e5e5ea;}
-    .ltitle{font-size:13px;font-weight:600;color:#000;}
-    .lcnt{font-size:10px;color:#8e8e93;background:#f2f2f7;padding:2px 8px;border-radius:10px;}
-    .lempty{padding:20px;text-align:center;font-size:12px;color:#c7c7cc;}
+    .lcard{background:rgba(255,255,255,0.08);backdrop-filter:blur(10px);border:0.5px solid rgba(255,255,255,0.15);border-radius:14px;overflow:hidden;}
+    .lhdr{padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid rgba(255,255,255,0.1);}
+    .ltitle{font-size:13px;font-weight:600;color:#ffffff;}
+    .lcnt{font-size:10px;color:rgba(201,168,76,0.8);background:rgba(201,168,76,0.12);border:0.5px solid rgba(201,168,76,0.2);padding:2px 8px;border-radius:10px;}
+    .lempty{padding:20px;text-align:center;font-size:12px;color:rgba(255,255,255,0.25);}
     .lbody{max-height:280px;overflow-y:auto;}
-    .litem{padding:10px 14px;border-bottom:0.5px solid #f2f2f7;display:flex;align-items:center;gap:10px;}
+    .litem{padding:10px 14px;border-bottom:0.5px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:10px;}
     .litem:last-child{border-bottom:none;}
-    .lav{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;}
-    .lnombre{font-size:12px;font-weight:600;color:#000;}
-    .lmeta{font-size:10px;color:#8e8e93;margin-top:1px;}
+    .lav{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:rgba(201,168,76,0.2);color:#c9a84c;}
+    .lnombre{font-size:12px;font-weight:600;color:#ffffff;}
+    .lmeta{font-size:10px;color:rgba(255,255,255,0.4);margin-top:1px;}
     .lright{display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-left:auto;}
     .badge{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:600;white-space:nowrap;}
-    .lhora{font-size:10px;color:#8e8e93;}
+    .lhora{font-size:10px;color:rgba(201,168,76,0.6);}
 
     /* FOOTER */
-    footer{padding:12px;text-align:center;font-size:10px;color:#c7c7cc;}
+    footer{padding:12px;text-align:center;font-size:10px;color:rgba(201,168,76,0.4);}
 
     /* TOAST */
-    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1c1c1e;border-radius:14px;padding:10px 20px;font-size:12px;font-weight:600;color:white;transition:transform 0.3s ease;white-space:nowrap;z-index:999;pointer-events:none;}
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:rgba(201,168,76,0.95);border-radius:14px;padding:10px 20px;font-size:12px;font-weight:600;color:#0d2460;transition:transform 0.3s ease;white-space:nowrap;z-index:999;pointer-events:none;}
     .toast.show{transform:translateX(-50%) translateY(0);}
   </style>
 </head>
@@ -139,7 +141,7 @@
       </div>
       <div class="sc" style="justify-content:center;">
         <div class="sc-top"><div class="sc-dot" style="background:#007aff"></div><span class="sc-lbl">Hora actual</span></div>
-        <div id="reloj-hora" style="font-size:17px;font-weight:700;color:#007aff;line-height:1.2;margin-top:2px;">--:--</div>
+        <div id="reloj-hora" style="font-size:17px;font-weight:700;color:#ffffff;line-height:1.2;margin-top:2px;">--:--</div>
         <div id="reloj-seg" style="font-size:9px;color:#c7c7cc;margin-top:3px;">--</div>
       </div>
     </div>
@@ -1038,7 +1040,7 @@ function setTurno(t) {
     btn.style.color = '';
   });
   document.getElementById('btn-'+t).classList.add('active');
-  document.getElementById('btn-'+t).style.color = col;
+  document.getElementById('btn-'+t).style.color = '#c9a84c';
   document.getElementById('sbtn').style.background = col;
   document.querySelectorAll('.cc').forEach(c => c.style.borderColor = col);
 
@@ -1137,6 +1139,7 @@ function onScanSuccess(text) {
 
   if (!alumno) {
     mostrarAlerta('error', 'QR no reconocido: ' + id);
+    iniciarScanner();
     return;
   }
 
@@ -1147,6 +1150,7 @@ function onScanSuccess(text) {
     if (turnoAlumno !== turnoActual) {
       const turnoNombre = turnoAlumno === 'Manana' ? 'Mañana' : 'Tarde';
       mostrarAlerta('error', alumno.nom + ' pertenece al turno ' + turnoNombre);
+      iniciarScanner();
       return;
     }
   }
@@ -1154,6 +1158,7 @@ function onScanSuccess(text) {
   const yaReg = regs[turno].find(r => r.id === id);
   if (yaReg) {
     mostrarAlerta('warning', alumno.nom + ' ya fue registrado a las ' + yaReg.hora);
+    iniciarScanner();
     return;
   }
 
@@ -1211,14 +1216,18 @@ function confirmar() {
     ? alumnoActual.nom + ' registrado en reforzamiento'
     : alumnoActual.nom + ' — Asistencia registrada';
   mostrarAlerta('success', msg);
-  cancelar();
+  document.getElementById('cpanel').className = 'cpanel';
+  document.getElementById('cpanel').style.border = '';
+  alumnoActual = null;
   render();
+  iniciarScanner();
 }
 
 function cancelar() {
   document.getElementById('cpanel').className = 'cpanel';
   document.getElementById('cpanel').style.border = '';
   alumnoActual = null;
+  iniciarScanner();
 }
 
 // ── LOCAL STORAGE ──
