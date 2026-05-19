@@ -1103,13 +1103,38 @@ function iniciarScanner() {
   document.getElementById('sbtn').style.background = '#ff3b30';
 
   scanner = new Html5Qrcode('reader');
+
+  // qrbox adaptable al tamaño de la cámara (más tolerante)
+  const qrboxFn = function(viewW, viewH) {
+    const minEdge = Math.min(viewW, viewH);
+    const size = Math.floor(minEdge * 0.75);
+    return { width: size, height: size };
+  };
+
+  const config = {
+    fps: 15,
+    qrbox: qrboxFn,
+    aspectRatio: 1.0,
+    experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+  };
+
   scanner.start(
-    {facingMode:'environment'},
-    {fps:10, qrbox:{width:200,height:200}},
+    { facingMode: 'environment' },
+    config,
     onScanSuccess,
     () => {}
-  ).catch(() => {
-    mostrarAlerta('error', 'No se pudo acceder a la camara');
+  ).catch(err => {
+    let msg = 'No se pudo acceder a la camara';
+    const e = String(err || '');
+    if (e.indexOf('NotAllowedError') !== -1 || e.indexOf('Permission') !== -1)
+      msg = 'Permiso de camara denegado. Actívalo en el navegador.';
+    else if (e.indexOf('NotFoundError') !== -1)
+      msg = 'No se encontró ninguna cámara en el dispositivo.';
+    else if (e.indexOf('NotReadableError') !== -1)
+      msg = 'La cámara está en uso por otra app. Ciérrala e intenta.';
+    else if (location.protocol !== 'https:' && location.hostname !== 'localhost')
+      msg = 'La cámara requiere HTTPS. Abre la app desde el link https.';
+    mostrarAlerta('error', msg);
     detenerScanner();
   });
   scannerActivo = true;
